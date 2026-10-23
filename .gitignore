@@ -1,0 +1,18 @@
+# Python & Sanal Ortamlar
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# Büyük Veri Setleri ve Model Ağırlıkları (GitHub limitini aşmaması için)
+data/
+*.zip
+*.tar.gz
+*.pth
+*.pt
+*.onnx
+*.h5
+
+# IDE & İşletim Sistemi Dosyaları
+.vscode/
+.DS_Store
