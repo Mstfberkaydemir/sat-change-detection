@@ -3,16 +3,16 @@
 ## 1. Use Case Diyagramı
 ```mermaid
 graph TD
-    actor User as "Kullanıcı / Afet Uzmanı"
+    User["Kullanıcı / Afet Uzmanı"]
     
     subgraph System ["Uydu Görüntüleri ile Otomatik Arazi Değişimi ve Afet Hasar Tespiti Platformu"]
-        UC1("Bölge ve Senaryo Seçimi Yap (Hatay/Manavgat)")
-        UC2("T1 ve T2 Çift Zamanlı Görüntü Yükle")
-        UC3("Otomatik Değişim Tespiti Analizi Başlat")
-        UC4("Slider Üzerinden T1/T2 Kıyaslaması Yap")
-        UC5("Segmentasyon Maskesi Katmanını İncele")
-        UC6("Afet/Hasar İstatistik Raporunu Görüntüle ve İndir")
-        UC7("Analiz Geçmişini Veritabanından Sorgula")
+        UC1["Bölge ve Senaryo Seçimi Yap (Hatay/Manavgat)"]
+        UC2["T1 ve T2 Çift Zamanlı Görüntü Yükle"]
+        UC3["Otomatik Değişim Tespiti Analizi Başlat"]
+        UC4["Slider Üzerinden T1/T2 Kıyaslaması Yap"]
+        UC5["Segmentasyon Maskesi Katmanını İncele"]
+        UC6["Afet/Hasar İstatistik Raporunu Görüntüle ve İndir"]
+        UC7["Analiz Geçmişini Veritabanından Sorgula"]
     end
 
     User --> UC1
@@ -22,7 +22,6 @@ graph TD
     User --> UC5
     User --> UC6
     User --> UC7
-
     graph LR
     subgraph Frontend ["Kullanıcı Arayüzü (Frontend)"]
         UI["Leaflet.js / Mapbox GL JS"]
@@ -36,7 +35,7 @@ graph TD
     end
 
     subgraph Storage ["Veri Depolama & Modeller"]
-        DB[(PostgreSQL / SQLite Database)]
+        DB[("PostgreSQL / SQLite Database")]
         Models[("Eğitilmiş ONNX Modeli (U-Net / Siamese)")]
         FileStore[("Drive / Local Storage (Images & Masks)")]
     end
@@ -45,17 +44,16 @@ graph TD
     API --> Val
     Val -->|Aligned 512x512 Patches| Engine
     Engine -->|Loads Weights| Models
-    Engine -->|Inference Result (Change Mask)| API
-    API -->|Save Analysis Metadata| DB
+    Engine -->|Inference Result| API
+    API -->|Save Metadata| DB
     API -->|Save Mask & Tiles| FileStore
-    API -->|JSON Response: GeoJSON/Mask Layer| UI
+    API -->|JSON Response| UI
     UI --> Slider
-
     flowchart TD
     subgraph Input ["1. Veri Kaynakları"]
-        D1[SpaceNet-7]
-        D2[xBD Dataset]
-        D3[Sentinel-2 Satellite Data]
+        D1["SpaceNet-7"]
+        D2["xBD Dataset"]
+        D3["Sentinel-2 Satellite Data"]
     end
 
     subgraph Preprocessing ["2. Ön İşleme & Veri Hazırlama"]
@@ -84,40 +82,37 @@ graph TD
     M1 --> M2 --> M3 --> M4
     M4 --> Deployment
     E1 --> E2 --> E3
-
     flowchart TD
-    Start([Başla]) --> Upload[Kullanıcı T1 ve T2 Görüntülerini Yükler]
-    Upload --> CheckFormat{Format Uygun mu? .png, .jpg, .tif}
+    Start([Başla]) --> Upload["Kullanıcı T1 ve T2 Görüntülerini Yükler"]
+    Upload --> CheckFormat{"Format Uygun mu? (.png, .jpg, .tif)"}
     
-    CheckFormat -- Hayır --> Err1[Hata: Geçersiz Dosya Formatı!] --> Terminate([İşlemi Sonlandır])
-    CheckFormat -- Evet --> CheckSize{Çözünürlük ve Boyut Uygun mu?}
+    CheckFormat -- Hayır --> Err1["Hata: Geçersiz Dosya Formatı!"] --> Terminate([İşlemi Sonlandır])
+    CheckFormat -- Evet --> CheckSize{"Çözünürlük ve Boyut Uygun mu?"}
     
-    CheckSize -- Hayır --> Err2[Hata: Görüntü Boyutu Sınırı Aşıldı!] --> Terminate
-    CheckSize -- Evet --> Align[Görüntüleri Konumsal Hizala ve 512x512 Boyutlandır]
-    Align --> Success[Veri Başarıyla Hazırlandı] --> End([Sonraki Adıma Geç])
-
+    CheckSize -- Hayır --> Err2["Hata: Görüntü Boyutu Sınırı Aşıldı!"] --> Terminate
+    CheckSize -- Evet --> Align["Görüntüleri Hizala ve 512x512 Boyutlandır"]
+    Align --> Success["Veri Başarıyla Hazırlandı"] --> End([Sonraki Adıma Geç])
     flowchart TD
-    Start([Başla]) --> Receive[Hizalanmış T1 ve T2 Yamalarını Al]
-    Receive --> LoadModel{ONNX Modeli Yüklendi mi?}
+    Start([Başla]) --> Receive["Hizalanmış T1 ve T2 Yamalarını Al"]
+    Receive --> LoadModel{"ONNX Modeli Yüklendi mi?"}
     
-    LoadModel -- Hayır / Hata --> ErrModel[Hata 500: Model Yüklenemedi!] --> Retry[Yeniden Dene]
+    LoadModel -- Hayır --> ErrModel["Hata 500: Model Yüklenemedi!"] --> Retry["Yeniden Dene"]
     Retry --> LoadModel
     
-    LoadModel -- Evet --> Inference[ONNX Engine Çıkarımı Çalıştırır]
-    Inference --> CheckMemory{Bellek (RAM/GPU) Yeterli mi?}
+    LoadModel -- Evet --> Inference["ONNX Engine Çıkarımı Çalıştırır"]
+    Inference --> CheckMemory{"Bellek Yeterli mi?"}
     
-    CheckMemory -- Hayır --> ErrMem[Hata 503: Sunucu Aşırı Yüklü!] --> Abort([Analizi Durdur])
-    CheckMemory -- Evet --> GenMask[İkili Değişim Maskesini Üret]
-    GenMask --> SaveDB[Veritabanına Kaydet ve JSON Dön] --> End([Son])
-
+    CheckMemory -- Hayır --> ErrMem["Hata 503: Sunucu Yüklü!"] --> Abort([Analizi Durdur])
+    CheckMemory -- Evet --> GenMask["İkili Değişim Maskesini Üret"]
+    GenMask --> SaveDB["Veritabanına Kaydet ve JSON Dön"] --> End([Son])
     flowchart TD
-    Start([Başla]) --> Fetch[Arayüz Maske ve Harita Katmanlarını Çağırır]
-    Fetch --> CheckNet{Ağ Bağlantısı Aktif mi?}
+    Start([Başla]) --> Fetch["Arayüz Maske ve Harita Katmanlarını Çağırır"]
+    Fetch --> CheckNet{"Ağ Bağlantısı Aktif mi?"}
     
-    CheckNet -- Hayır --> ErrNet[Hata: Bağlantı Kesildi!] --> OfflineMsg[Çevrimdışı Uyarısı Göster]
-    CheckNet -- Evet --> RenderBase[Base Tile Mapbox Katmanını Yükle]
+    CheckNet -- Hayır --> ErrNet["Hata: Bağlantı Kesildi!"] --> OfflineMsg["Çevrimdışı Uyarısı Göster"]
+    CheckNet -- Evet --> RenderBase["Base Tile Mapbox Katmanını Yükle"]
     
-    RenderBase --> RenderMask{Değişim Maskesi GeoJSON Yüklendi mi?}
-    RenderMask -- Hayır --> ErrMask[Hata: Katman Yüklenemedi!] --> RefreshBtn[Yeniden Yükle Butonu Göster]
-    RenderMask -- Evet --> InitSlider[Interactive Split-Slider Bileşenini Başlat]
+    RenderBase --> RenderMask{"Değişim Maskesi GeoJSON Yüklendi mi?"}
+    RenderMask -- Hayır --> ErrMask["Hata: Katman Yüklenemedi!"] --> RefreshBtn["Yeniden Yükle Butonu Göster"]
+    RenderMask -- Evet --> InitSlider["Interactive Split-Slider Bileşenini Başlat"]
     InitSlider --> End([Kullanıcı Etkileşime Hazır])
