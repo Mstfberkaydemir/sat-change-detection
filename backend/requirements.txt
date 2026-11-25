@@ -1,0 +1,13 @@
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.29
+SQLAlchemy>=2.0,<2.1
+alembic>=1.13
+pydantic>=2.6
+pydantic-settings>=2.2
+python-multipart>=0.0.9
+PyJWT>=2.8
+numpy>=1.26
+opencv-python-headless>=4.9
+
+# PostgreSQL kullanacaksanız (DATABASE_URL=postgresql+psycopg2://...):
+# psycopg2-binary>=2.9
